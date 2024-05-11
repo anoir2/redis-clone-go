@@ -9,6 +9,7 @@ import (
 
 type RedisServer interface {
 	Start() error
+	listen(conn net.Conn) error
 }
 
 type DefaultTCPServer struct {
@@ -27,7 +28,14 @@ func (ds *DefaultTCPServer) Start() error {
 		return err
 	}
 
-	_, err = l.Accept()
+	conn, err := l.Accept()
+	if err != nil {
+		return err
+	}
+
+	defer conn.Close()
+
+	err = ds.listen(conn)
 	if err != nil {
 		return err
 	}
@@ -35,12 +43,25 @@ func (ds *DefaultTCPServer) Start() error {
 	return nil
 }
 
+func (ds *DefaultTCPServer) listen(conn net.Conn) error {
+	var stream = make([]byte, 1024)
+	for {
+		n, err := conn.Read(stream)
+		if err != nil {
+			return err
+		}
+		fmt.Println(string(stream[:n]))
+	}
+}
+
 func main() {
-	fmt.Println("Logs from your program will appear here!")
+	fmt.Println("Starting server")
 	var server RedisServer = NewDefaultTCPServer("0.0.0.0", 6379)
 	err := server.Start()
 	if err != nil {
 		fmt.Println("Error accepting connection: ", err.Error())
 		os.Exit(1)
 	}
+
+	fmt.Println("Server terminated.")
 }
