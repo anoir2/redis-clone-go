@@ -26,3 +26,14 @@ func NewPingCommand() *Ping {
 func (p *Ping) Execute() (Result, error) {
 	return newResult("PONG\n"), nil
 }
+
+type UnknownCommand struct {
+}
+
+func NewUnknownCommand() *UnknownCommand {
+	return &UnknownCommand{}
+}
+
+func (uc *UnknownCommand) Execute() (Result, error) {
+	return newResult("Unknown command. Please, consult help\n"), nil
+}

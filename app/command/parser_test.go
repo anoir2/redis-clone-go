@@ -4,7 +4,6 @@
 package command
 
 import (
-	"errors"
 	"github.com/stretchr/testify/assert"
 	"testing"
 )
@@ -24,8 +23,9 @@ func TestParseInvalidCommand(t *testing.T) {
 	var strCommand = "INVALID-CMD"
 	var parser = NewParser()
 
-	var _, err = parser.Parse(strCommand)
+	var actualCommand, err = parser.Parse(strCommand)
 
-	var expectedError = errors.New("invalid command")
-	assert.Equal(t, expectedError, err)
+	var expected = NewUnknownCommand()
+	assert.Nil(t, err)
+	assert.Equal(t, expected, actualCommand)
 }

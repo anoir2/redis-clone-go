@@ -46,16 +46,28 @@ func (ds *DefaultTCPServer) listen(conn net.Conn) error {
 		if err != nil {
 			return err
 		}
-		fmt.Println(string(stream[:n]))
-		cmdToExec, err := ds.parser.Parse(string(stream[:n]))
+
+		var input = string(stream[:n])
+		fmt.Println(input)
+
+		var output string
+		cmdRes, err := ds.executeCommand(input)
 		if err != nil {
-			fmt.Println("error:", err)
-		}
-		res, err := cmdToExec.Execute()
-		if err != nil {
-			return err
+			fmt.Println(err)
+			output = "Internal error\n"
+		} else {
+			output = cmdRes.Output()
 		}
 
-		conn.Write([]byte(res.Output()))
+		conn.Write([]byte(output))
 	}
+}
+
+func (ds *DefaultTCPServer) executeCommand(input string) (command.Result, error) {
+	cmdToExec, err := ds.parser.Parse(input)
+	if err != nil {
+		return command.Result{}, err
+	}
+
+	return cmdToExec.Execute()
 }

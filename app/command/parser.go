@@ -1,7 +1,6 @@
 package command
 
 import (
-	"errors"
 	"strings"
 )
 
@@ -25,5 +24,5 @@ func (sp *StandardParser) Parse(rawInput string) (Command, error) {
 		return NewPingCommand(), nil
 	}
 
-	return nil, errors.New("invalid command")
+	return NewUnknownCommand(), nil
 }
