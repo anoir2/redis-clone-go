@@ -24,5 +24,5 @@ func NewPingCommand() *Ping {
 }
 
 func (p *Ping) Execute() (Result, error) {
-	return newResult("PONG"), nil
+	return newResult("PONG\n"), nil
 }

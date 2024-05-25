@@ -2,17 +2,19 @@ package server
 
 import (
 	"fmt"
+	"github.com/codecrafters-io/redis-starter-go/app/command"
 	"net"
 	"strconv"
 )
 
 type DefaultTCPServer struct {
-	port int
-	host string
+	port   int
+	host   string
+	parser command.Parser
 }
 
-func NewDefaultTCPServer(host string, port int) *DefaultTCPServer {
-	return &DefaultTCPServer{port: port, host: host}
+func NewDefaultTCPServer(host string, port int, parser command.Parser) *DefaultTCPServer {
+	return &DefaultTCPServer{port: port, host: host, parser: parser}
 }
 
 func (ds *DefaultTCPServer) Start() error {
@@ -45,5 +47,15 @@ func (ds *DefaultTCPServer) listen(conn net.Conn) error {
 			return err
 		}
 		fmt.Println(string(stream[:n]))
+		cmdToExec, err := ds.parser.Parse(string(stream[:n]))
+		if err != nil {
+			fmt.Println("error:", err)
+		}
+		res, err := cmdToExec.Execute()
+		if err != nil {
+			return err
+		}
+
+		conn.Write([]byte(res.Output()))
 	}
 }
