@@ -1,16 +1,10 @@
-package main
+package server
 
 import (
 	"fmt"
 	"net"
-	"os"
 	"strconv"
 )
-
-type RedisServer interface {
-	Start() error
-	listen(conn net.Conn) error
-}
 
 type DefaultTCPServer struct {
 	port int
@@ -52,16 +46,4 @@ func (ds *DefaultTCPServer) listen(conn net.Conn) error {
 		}
 		fmt.Println(string(stream[:n]))
 	}
-}
-
-func main() {
-	fmt.Println("Starting server")
-	var server RedisServer = NewDefaultTCPServer("0.0.0.0", 6379)
-	err := server.Start()
-	if err != nil {
-		fmt.Println("Error accepting connection: ", err.Error())
-		os.Exit(1)
-	}
-
-	fmt.Println("Server terminated.")
 }
