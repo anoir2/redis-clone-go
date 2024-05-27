@@ -32,6 +32,17 @@ func TestRESPParserPingCommandShouldReturnCommandParsed(t *testing.T) {
 	assert.Equal(t, expected, actualCommand)
 }
 
+func TestRESPParserCommandsCommandShouldReturnCommandParsed(t *testing.T) {
+	var strCommand = "*1\r\n$7\r\nCOMMAND\r\n"
+	var parser = command.NewRESPParser()
+
+	var actualCommand, err = parser.Parse(strCommand)
+
+	var expected = []command.Command{command.NewCommandsCommand()}
+	assert.Nil(t, err)
+	assert.Equal(t, expected, actualCommand)
+}
+
 func TestRESPParserInvalidCommandShouldReturnInvalidCmdErr(t *testing.T) {
 	var strCommand = "*1\r\n$7\r\nINVALID\r\n"
 	var parser = command.NewRESPParser()

@@ -27,13 +27,13 @@ func (p *Ping) Execute() (Result, error) {
 	return newResult("+PONG\r\n"), nil
 }
 
-type UnknownCommand struct {
+type CommandsCommand struct {
 }
 
-func NewUnknownCommand() *UnknownCommand {
-	return &UnknownCommand{}
+func NewCommandsCommand() *CommandsCommand {
+	return &CommandsCommand{}
 }
 
-func (uc *UnknownCommand) Execute() (Result, error) {
-	return newResult("Unknown command. Please, consult help\n"), nil
+func (cc *CommandsCommand) Execute() (Result, error) {
+	return newResult("*1\r\n*6\r\n$4\r\nping\r\n:1\r\n*1\r\n+readonly\r\n:0\r\n:0\r\n:0\r\n"), nil
 }

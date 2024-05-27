@@ -34,6 +34,8 @@ func (sp *RESPParser) Parse(rawInput string) ([]Command, error) {
 		switch rawCmd {
 		case "PING":
 			cmdToReturn = append(cmdToReturn, NewPingCommand())
+		case "COMMAND":
+			cmdToReturn = append(cmdToReturn, NewCommandsCommand())
 		default:
 			return nil, errors.New("invalid command: " + rawCmd)
 		}
