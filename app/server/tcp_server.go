@@ -3,6 +3,7 @@ package server
 import (
 	"fmt"
 	"github.com/codecrafters-io/redis-starter-go/app/command"
+	"io"
 	"net"
 	"strconv"
 )
@@ -24,22 +25,26 @@ func (ds *DefaultTCPServer) Start() error {
 		return err
 	}
 
-	conn, err := l.Accept()
-	if err != nil {
-		return err
-	}
+	defer l.Close()
 
-	defer conn.Close()
+	for {
+		conn, err := l.Accept()
+		if err != nil {
+			return err
+		}
 
-	err = ds.listen(conn)
-	if err != nil {
-		return err
+		err = ds.listen(conn)
+		if err != nil && err != io.EOF {
+			return err
+		}
 	}
 
 	return nil
 }
 
 func (ds *DefaultTCPServer) listen(conn net.Conn) error {
+	defer conn.Close()
+
 	var stream = make([]byte, 1024)
 	for {
 		n, err := conn.Read(stream)
@@ -54,20 +59,37 @@ func (ds *DefaultTCPServer) listen(conn net.Conn) error {
 		cmdRes, err := ds.executeCommand(input)
 		if err != nil {
 			fmt.Println(err)
+			cmdRes = []command.Result{}
 			output = "Internal error\n"
-		} else {
-			output = cmdRes.Output()
 		}
 
-		conn.Write([]byte(output))
+		for _, cmd := range cmdRes {
+			output += cmd.Output()
+		}
+		fmt.Println("output:", output)
+
+		_, err = conn.Write([]byte(output))
+		if err != nil {
+			fmt.Println("conn error:", err)
+		}
 	}
 }
 
-func (ds *DefaultTCPServer) executeCommand(input string) (command.Result, error) {
-	cmdToExec, err := ds.parser.Parse(input)
+func (ds *DefaultTCPServer) executeCommand(input string) ([]command.Result, error) {
+	cmdsToExec, err := ds.parser.Parse(input)
 	if err != nil {
-		return command.Result{}, err
+		return []command.Result{}, err
 	}
 
-	return cmdToExec.Execute()
+	var resToReturn = make([]command.Result, 0, len(cmdsToExec))
+	for _, cmd := range cmdsToExec {
+		result, err := cmd.Execute()
+		if err != nil {
+			return []command.Result{}, err
+		}
+
+		resToReturn = append(resToReturn, result)
+	}
+
+	return resToReturn, nil
 }

@@ -1,8 +1,10 @@
 //go:build unit
 // +build unit
 
-package server
+package server_test
 
-func TestNewDefaultServer(t *Testing) {
+import "testing"
+
+func TestNewDefaultServer(t *testing.T) {
 	// NOP
 }

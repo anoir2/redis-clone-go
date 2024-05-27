@@ -24,7 +24,7 @@ func NewPingCommand() *Ping {
 }
 
 func (p *Ping) Execute() (Result, error) {
-	return newResult("PONG\n"), nil
+	return newResult("+PONG\r\n"), nil
 }
 
 type UnknownCommand struct {

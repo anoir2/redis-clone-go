@@ -9,7 +9,7 @@ import (
 
 func main() {
 	fmt.Println("Starting server")
-	var parser command.Parser = command.NewParser()
+	var parser command.Parser = command.NewRESPParser()
 	var server server.RedisServer = server.NewDefaultTCPServer("0.0.0.0", 6379, parser)
 	err := server.Start()
 	if err != nil {
