@@ -33,7 +33,7 @@ func (ds *DefaultTCPServer) Start() error {
 			return err
 		}
 
-		err = ds.listen(conn)
+		go ds.listen(conn)
 		if err != nil && err != io.EOF {
 			return err
 		}
