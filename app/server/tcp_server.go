@@ -34,22 +34,20 @@ func (ds *DefaultTCPServer) Start() error {
 		}
 
 		go ds.listen(conn)
-		if err != nil && err != io.EOF {
-			return err
-		}
 	}
-
-	return nil
 }
 
-func (ds *DefaultTCPServer) listen(conn net.Conn) error {
+func (ds *DefaultTCPServer) listen(conn net.Conn) {
 	defer conn.Close()
 
 	var stream = make([]byte, 1024)
 	for {
 		n, err := conn.Read(stream)
 		if err != nil {
-			return err
+			if err != io.EOF {
+				fmt.Println(err)
+			}
+			return
 		}
 
 		var input = string(stream[:n])
