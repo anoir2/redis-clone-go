@@ -38,34 +38,42 @@ func (rs *RESPSerializer) Serialize(obj any) (string, error) {
 }
 
 func (rs *RESPSerializer) Deserialize(data string) (any, error) {
-	res, _, err := rs.deserialize(data, 0)
+	res, _, err := rs.deserialize(data)
 	return res, err
 }
 
-func (rs *RESPSerializer) deserialize(data string, index int) (any, int, error) {
+func (rs *RESPSerializer) deserialize(data string) (any, string, error) {
 	if len(data) == 0 {
-		return nil, 0, errors.New("data is empty")
+		return nil, data, errors.New("data is empty")
 	}
 
-	var charType = data[index]
+	var stringLeftToParse string
+
+	var charType = data[0]
 	switch charType {
 	case '$':
-		var extractedNumber, index, err = rs.extractNumberFromLine(data, index+1)
+		stringLeftToParse = data[1:]
+		var extractedNumber, err = rs.extractNumberFromLine(stringLeftToParse)
 		if err != nil {
-			return nil, 0, err
+			return nil, data, err
+		}
+
+		stringLeftToParse, ok := rs.removeLineFromString(stringLeftToParse)
+		if !ok {
+			return nil, data, errors.New("endline not found in " + data)
 		}
 
 		var strLen, _ = strconv.Atoi(extractedNumber)
 
 		var strDeserialized strings.Builder
-		for i := index; i < index+strLen; i++ {
-			strDeserialized.WriteByte(data[i])
+		for i := 0; i < strLen; i++ {
+			strDeserialized.WriteByte(stringLeftToParse[i])
 		}
-		indexForEndline := strings.Index(data[index:], respEndline)
-		if indexForEndline == -1 {
-			return nil, 0, err
+
+		stringLeftToParse, ok = rs.removeLineFromString(stringLeftToParse)
+		if !ok {
+			return nil, data, errors.New("endline not found in " + data)
 		}
-		index = index + indexForEndline + len(respEndline)
 
 		var returnValue any = strDeserialized.String()
 
@@ -74,40 +82,55 @@ func (rs *RESPSerializer) deserialize(data string, index int) (any, int, error) 
 			returnValue = cmd
 		}
 
-		return returnValue, index, nil
+		return returnValue, stringLeftToParse, nil
 	case '*':
-		var extractedNumber, index, err = rs.extractNumberFromLine(data, index+1)
+		stringLeftToParse = data[1:]
+		var extractedNumber, err = rs.extractNumberFromLine(stringLeftToParse)
 		if err != nil {
-			return nil, 0, err
+			return nil, data, err
 		}
 
-		var elemInArray, _ = strconv.Atoi(extractedNumber)
+		stringLeftToParse, ok := rs.removeLineFromString(stringLeftToParse)
+		if !ok {
+			return nil, data, errors.New("endline not found in " + data)
+		}
+
+		elemInArray, err := strconv.Atoi(extractedNumber)
+		if err != nil {
+			return nil, data, err
+		}
 		var elements = make([]any, 0, elemInArray)
 
 		for range elemInArray {
-			result, newIndex, err := rs.deserialize(data, index)
+			result, stringLeftIteration, err := rs.deserialize(stringLeftToParse)
 			if err != nil {
-				return nil, 0, err
+				return nil, data, err
 			}
+			stringLeftToParse = stringLeftIteration
 
-			index = newIndex
 			elements = append(elements, result)
 		}
 
-		return elements, 0, nil
+		return elements, stringLeftToParse, nil
 
 	default:
-		return nil, 0, errors.New("invalid char")
+		return nil, data, errors.New("invalid char")
 	}
 }
 
-func (rs *RESPSerializer) extractNumberFromLine(input string, start int) (string, int, error) {
-	var indexPos = strings.Index(input[start:], respEndline)
-	if indexPos == -1 {
-		return "", start, errors.New("invalid response")
+func (rs *RESPSerializer) removeLineFromString(data string) (string, bool) {
+	if strings.Index(data, respEndline) == -1 {
+		return data, false
+	}
+	indexForSliceArrayCount := strings.Index(data, respEndline) + len(respEndline)
+	return data[indexForSliceArrayCount:], true
+}
+
+func (rs *RESPSerializer) extractNumberFromLine(input string) (string, error) {
+	var end = strings.Index(input, respEndline)
+	if end == -1 {
+		return "", errors.New("invalid response")
 	}
 
-	var end = start + indexPos
-
-	return input[start:end], end + len(respEndline), nil
+	return input[:end], nil
 }
