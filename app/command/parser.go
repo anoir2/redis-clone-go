@@ -7,44 +7,29 @@ import (
 	"strings"
 )
 
-const (
-	respEndline = "\r\n"
-)
-
-type Parser interface {
-	Parse(input string) ([]Command, error)
+type CommandParser interface {
+	Parse(input string) (Command, error)
 }
 
-type RESPParser struct {
+type RedisCommandParser struct {
 }
 
-func NewRESPParser() *RESPParser {
-	return &RESPParser{}
+func NewRedisCommandParser() *RedisCommandParser {
+	return &RedisCommandParser{}
 }
 
-func (sp *RESPParser) Parse(rawInput string) ([]Command, error) {
-	var rawCmds, err = sp.extractCommands(rawInput)
-	if err != nil {
-		return nil, err
-	} else if len(rawCmds) == 0 {
-		return nil, errors.New("No commands to parse found")
-	}
-	var cmdToReturn = make([]Command, 0, len(rawCmds))
-	for _, rawCmd := range rawCmds {
-		switch rawCmd {
-		case "PING":
-			cmdToReturn = append(cmdToReturn, NewPingCommand())
-		case "COMMAND":
-			cmdToReturn = append(cmdToReturn, NewCommandsCommand())
-		default:
-			return nil, errors.New("invalid command: " + rawCmd)
-		}
+func (sp *RedisCommandParser) Parse(cmd string) (Command, error) {
+	switch strings.ToUpper(cmd) {
+	case "PING":
+		return NewPingCommand(), nil
+	case "COMMAND":
+		return NewCommandsCommand(), nil
 	}
 
-	return cmdToReturn, nil
+	return nil, errors.New("invalid command: " + cmd)
 }
 
-func (sp *RESPParser) extractCommands(rawInput string) ([]string, error) {
+func (sp *RedisCommandParser) extractCommands(rawInput string) ([]string, error) {
 	var cmds = make([]string, 0, 10)
 	if len(rawInput) == 0 || rawInput[0] != '*' {
 		return nil, errors.New("no commands to extract")

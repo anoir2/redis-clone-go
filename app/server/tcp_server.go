@@ -9,13 +9,13 @@ import (
 )
 
 type DefaultTCPServer struct {
-	port   int
-	host   string
-	parser command.Parser
+	port       int
+	host       string
+	serializer command.Serializer
 }
 
-func NewDefaultTCPServer(host string, port int, parser command.Parser) *DefaultTCPServer {
-	return &DefaultTCPServer{port: port, host: host, parser: parser}
+func NewDefaultTCPServer(host string, port int, serializer command.Serializer) *DefaultTCPServer {
+	return &DefaultTCPServer{port: port, host: host, serializer: serializer}
 }
 
 func (ds *DefaultTCPServer) Start() error {
@@ -74,19 +74,24 @@ func (ds *DefaultTCPServer) listen(conn net.Conn) {
 }
 
 func (ds *DefaultTCPServer) executeCommand(input string) ([]command.Result, error) {
-	cmdsToExec, err := ds.parser.Parse(input)
+	deserializeOutput, err := ds.serializer.Deserialize(input)
 	if err != nil {
 		return []command.Result{}, err
 	}
 
-	var resToReturn = make([]command.Result, 0, len(cmdsToExec))
-	for _, cmd := range cmdsToExec {
-		result, err := cmd.Execute()
-		if err != nil {
-			return []command.Result{}, err
-		}
+	cmdToExec, _ := deserializeOutput.([]any)
 
-		resToReturn = append(resToReturn, result)
+	var resToReturn = make([]command.Result, 0, len(cmdToExec))
+	for _, cmd := range cmdToExec {
+		cmd, ok := cmd.(command.Command)
+		if ok {
+			result, err := cmd.Execute()
+			if err != nil {
+				return []command.Result{}, err
+			}
+
+			resToReturn = append(resToReturn, result)
+		}
 	}
 
 	return resToReturn, nil
