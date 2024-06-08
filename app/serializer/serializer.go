@@ -1,4 +1,4 @@
-package command
+package serializer
 
 import (
 	"errors"
@@ -10,6 +10,10 @@ import (
 const (
 	respEndline = "\r\n"
 )
+const (
+	Array = '*'
+	Bulk  = '$'
+)
 
 type Serializer interface {
 	Serialize(obj any) (string, error)
@@ -17,13 +21,10 @@ type Serializer interface {
 }
 
 type RESPSerializer struct {
-	commandParser CommandParser
 }
 
-func NewRESPSerializer(commandParser CommandParser) *RESPSerializer {
-	return &RESPSerializer{
-		commandParser: commandParser,
-	}
+func NewRESPSerializer() *RESPSerializer {
+	return &RESPSerializer{}
 }
 
 func (rs *RESPSerializer) Serialize(obj any) (string, error) {
@@ -51,7 +52,7 @@ func (rs *RESPSerializer) deserialize(data string) (any, string, error) {
 
 	var charType = data[0]
 	switch charType {
-	case '$':
+	case Bulk:
 		stringLeftToParse = data[1:]
 		var extractedNumber, err = rs.extractNumberFromLine(stringLeftToParse)
 		if err != nil {
@@ -75,15 +76,8 @@ func (rs *RESPSerializer) deserialize(data string) (any, string, error) {
 			return nil, data, errors.New("endline not found in " + data)
 		}
 
-		var returnValue any = strDeserialized.String()
-
-		cmd, err := rs.commandParser.Parse(strDeserialized.String())
-		if err == nil {
-			returnValue = cmd
-		}
-
-		return returnValue, stringLeftToParse, nil
-	case '*':
+		return strDeserialized.String(), stringLeftToParse, nil
+	case Array:
 		stringLeftToParse = data[1:]
 		var extractedNumber, err = rs.extractNumberFromLine(stringLeftToParse)
 		if err != nil {
@@ -99,8 +93,8 @@ func (rs *RESPSerializer) deserialize(data string) (any, string, error) {
 		if err != nil {
 			return nil, data, err
 		}
-		var elements = make([]any, 0, elemInArray)
 
+		var elements = make([]any, 0, elemInArray)
 		for range elemInArray {
 			result, stringLeftIteration, err := rs.deserialize(stringLeftToParse)
 			if err != nil {

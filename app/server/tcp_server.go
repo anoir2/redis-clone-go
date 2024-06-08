@@ -3,6 +3,7 @@ package server
 import (
 	"fmt"
 	"github.com/codecrafters-io/redis-starter-go/app/command"
+	"github.com/codecrafters-io/redis-starter-go/app/serializer"
 	"io"
 	"net"
 	"strconv"
@@ -11,10 +12,10 @@ import (
 type DefaultTCPServer struct {
 	port       int
 	host       string
-	serializer command.Serializer
+	serializer serializer.Serializer
 }
 
-func NewDefaultTCPServer(host string, port int, serializer command.Serializer) *DefaultTCPServer {
+func NewDefaultTCPServer(host string, port int, serializer serializer.Serializer) *DefaultTCPServer {
 	return &DefaultTCPServer{port: port, host: host, serializer: serializer}
 }
 

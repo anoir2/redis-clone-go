@@ -12,8 +12,24 @@ func (r Result) Output() string {
 	return r.output
 }
 
+type AvailableCommandHandler int
+
+const (
+	pingCmdHandler AvailableCommandHandler = iota + 1
+	commandCmdHandler
+)
+
+type CommandRequest interface {
+	Type() string
+}
+
 type Command interface {
-	Execute() (Result, error)
+	Execute(request CommandRequest) (Result, error)
+}
+
+var AvailableCommandMap = map[AvailableCommandHandler]Command{
+	pingCmdHandler:    NewPingCommand(),
+	commandCmdHandler: NewCommandsCommand(),
 }
 
 type Ping struct {
@@ -23,7 +39,7 @@ func NewPingCommand() *Ping {
 	return &Ping{}
 }
 
-func (p *Ping) Execute() (Result, error) {
+func (p *Ping) Execute(request CommandRequest) (Result, error) {
 	return newResult("+PONG\r\n"), nil
 }
 
@@ -34,6 +50,6 @@ func NewCommandsCommand() *CommandsCommand {
 	return &CommandsCommand{}
 }
 
-func (cc *CommandsCommand) Execute() (Result, error) {
+func (cc *CommandsCommand) Execute(request CommandRequest) (Result, error) {
 	return newResult("*1\r\n*6\r\n$4\r\nping\r\n:1\r\n*1\r\n+readonly\r\n:0\r\n:0\r\n:0\r\n"), nil
 }
